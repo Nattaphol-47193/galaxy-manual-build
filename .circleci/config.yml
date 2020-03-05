@@ -1,40 +1,49 @@
 version: 2
 jobs:
-  one:
+  build_rpm:
     docker:
-      - image: circleci/ruby:2.4.1
+      - image: centos:latest
     steps:
       - checkout
-      - run: echo "A first hello"
-      - run: mkdir -p my_workspace
-      - run: echo "Trying out workspaces" > my_workspace/echo-output
-      - persist_to_workspace:
-          # Must be an absolute path, or relative path from working_directory
-          root: my_workspace
-          # Must be relative path from root
-          paths:
-            - echo-output      
-  two:
-    docker:
-      - image: circleci/ruby:2.4.1
-    steps:
-      - checkout
-      - run: echo "A more familiar hi"  
+      - run: yum install sudo -y
+      - run: yum install java-11-openjdk -y
+      - run: yum install epel-release -y
+      - run: yum install fontconfig -y
+      - run: yum install urw-fonts -y
+      - run: yum install git-core -y
+      - run: yum install make -y
+      - run: make clean
+      - run: yum install dnf -y
+      - run: dnf install @nodejs -y
+      - run: dnf install npm -y
+      - run: curl -sL https://dl.yarnpkg.com/rpm/yarn.repo -o /etc/yum.repos.d/yarn.repo
+      - run: yum install yarn -y
+      - run: yum search wget
+      - run: yum install wget -y
+      - run: wget https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz
+      - run: sha256sum go1.13.4.linux-amd64.tar.gz
+      - run: tar -C /usr/local -xf go1.13.4.linux-amd64.tar.gz
+      - run: yum install go -y
+      - run: git clone https://github.com/Graylog2/graylog2-server
+      - run: dnf install maven -y
+      - run: cd /tmp
+      - run: wget https://github.com/Medium/phantomjs/releases/download/v2.1.1/phantomjs-2.1.1-linux-x86_64.tar.bz2
+      - run: yum install bzip2 -y
+      - run: tar -xvf phantomjs-2.1.1-linux-x86_64.tar.bz2
+      - run: cd
+      - run: make
+      - run: yum install ruby-devel gcc rpm-build rubygems -y
+      - run: gem install --no-document fpm
+      - run: gem install --no-ri --no-rdoc fpm
+      - run: go run build.go pkg-rpm
       - attach_workspace:
-          # Must be absolute path or relative path from working_directory
-          at: my_workspace
+            at: .
+      - store_artifacts:
+            path: ./dist
 
-      - run: |
-          if [[ $(cat my_workspace/echo-output) == "Trying out workspaces" ]]; then
-            echo "It worked!";
-          else
-            echo "Nope!"; exit 1
-          fi
+
 workflows:
   version: 2
-  one_and_two:
+  build_rpm:
     jobs:
-      - one
-      - two:
-          requires:
-            - one
+      - build_rpm
